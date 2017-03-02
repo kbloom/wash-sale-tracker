@@ -221,7 +221,12 @@ def merge_split_lots(lots):
 	    assert(lot.symbol == prev.symbol)
 	    prev.num_shares += lot.num_shares
 	    prev.basis += lot.basis
-	    prev.adjusted_basis += lot.adjusted_basis
+	    if lot.adjusted_basis and not prev.adjusted_basis:
+		prev.adjusted_basis = prev.basis
+	    if prev.adjusted_basis and not lot.adjusted_basis:
+		prev.adjusted_basis += lot.basis
+	    else:
+		prev.adjusted_basis += lot.adjusted_basis
 	    prev.proceeds += lot.proceeds
 	    prev.adjustment += lot.adjustment
 	    prev.buy_lot += '|' + lot.buy_lot
