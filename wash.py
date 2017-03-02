@@ -206,11 +206,59 @@ def wash_all_lots(lots, logger=logger_lib.NullLogger()):
         logger.print_lots('Found loss', lots, loss_lots=[loss_lot])
         wash_one_lot(loss_lot, lots, logger)
 
+def merge_split_lots(lots):
+    """Merge split lots back together, assuming lots is sorted with respect to
+    original_form_position so only sequential records need to be merged."""
+    
+    orig = lots.lots()
+    
+    out = []
+    # First lot in new sequence
+    prev = copy.copy(orig[0])
+    for lot in orig[1:]:
+	assert(prev.original_form_position <= lot.original_form_position)
+	if lot.original_form_position == prev.original_form_position:
+	    assert(lot.symbol == prev.symbol)
+	    prev.num_shares += lot.num_shares
+	    prev.basis += lot.basis
+	    prev.adjusted_basis += lot.adjusted_basis
+	    prev.proceeds += lot.proceeds
+	    prev.adjustment += lot.adjustment
+	    prev.buy_lot += '|' + lot.buy_lot
+	    if lot.adjustment_code:
+		prev.adjustment_code = lot.adjustment_code
+	    if lot.adjusted_buy_date and not prev.adjusted_buy_date:
+		prev.adjusted_buy_date = lot.adjusted_buy_date
+	else:
+	    # Loop has moved on to a different lot, finished with current
+	    out.append(prev)
+	    prev = copy.copy(lot)
+    if prev:
+	out.append(prev)
+    return lots_lib.Lots(out)
+
+def cmp_by_original_form_position(lot_a, lot_b):
+    if lot_a.original_form_position == lot_b.original_form_position:
+	return 0
+    if lot_a.original_form_position < lot_b.original_form_position:
+	return -1
+    return 1
+	    
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--out_file')
     parser.add_argument('-w', '--do_wash', metavar='in_file')
     parser.add_argument('-q', '--quiet', action="store_true")
+    parser.add_argument('-m', '--merge_split_lots', action="store_true",
+                       help='''Any split lots are merged back together at end.
+                       This makes it easier to match the output to the input
+                       lots, but can cause the buy-dates to be slightly
+                       incorrect since a lot can only have a single buy date.
+                       In this mode, some wash sale lots may have a loss that
+                       is greater than the adjustment amount, instead of being
+                       identical, i.e., only part of the loss in the lot is
+                       actually a wash sale. This is expected in this mode..''')
     parsed = parser.parse_args()
 
     if parsed.quiet:
@@ -223,6 +271,9 @@ def main():
             lots = lots_lib.Lots.create_from_csv_data(f)
         logger.print_lots('Start lots', lots)
         wash_all_lots(lots, logger)
+	if parsed.merge_split_lots:
+	    lots.sort(cmp = cmp_by_original_form_position)
+	    lots = merge_split_lots(lots)
         if parsed.out_file:
             with open(parsed.out_file, 'w') as f:
                 lots.write_csv_data(f)

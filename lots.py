@@ -85,7 +85,7 @@ class Lot(object):
         self.proceeds = proceeds
         self.adjustment_code = adjustment_code
         self.adjustment = adjustment
-        self.form_position = form_position
+        self.original_form_position = self.form_position = form_position
         self.buy_lot = buy_lot
         self.replacement_for = replacement_for
         self.is_replacement = is_replacement
@@ -120,6 +120,7 @@ class Lot(object):
                 self.adjustment_code == other.adjustment_code and
                 self.adjustment == other.adjustment and
                 self.form_position == other.form_position and
+		self.original_form_position == other.original_form_position and
                 self.buy_lot == other.buy_lot and
                 self.replacement_for == other.replacement_for and
                 self.is_replacement == other.is_replacement and
