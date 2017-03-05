@@ -264,6 +264,10 @@ def main():
                        is greater than the adjustment amount, instead of being
                        identical, i.e., only part of the loss in the lot is
                        actually a wash sale. This is expected in this mode..''')
+    parser.add_argument('-a', '--always_show_adjusted', action="store_true",
+			help='''Always fill in the adjusted buy date and basis.
+			If no adjustments were made, then the unadjusted basis and
+			buy date are used instead.''')
     parsed = parser.parse_args()
 
     if parsed.quiet:
@@ -281,7 +285,7 @@ def main():
 	    lots = merge_split_lots(lots)
         if parsed.out_file:
             with open(parsed.out_file, 'w') as f:
-                lots.write_csv_data(f)
+                lots.write_csv_data(parsed.always_show_adjusted, f)
         else:
             logger.print_lots('Final lots', lots)
 

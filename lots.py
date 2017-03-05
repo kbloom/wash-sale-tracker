@@ -503,7 +503,7 @@ class Lots(object):
             lots.append(Lot(**row))
         return Lots(lots)
 
-    def write_csv_data(self, output_file):
+    def write_csv_data(self, always_show_adjusted, output_file):
         """Writes this lots data as CSV data to an output file.
 
         Args:
@@ -538,13 +538,19 @@ class Lots(object):
             row['symbol'] = lot.symbol
             row['description'] = lot.description
             row['buy_date'] = convert_from_date(lot.buy_date)
-            if lot.buy_date == lot.adjusted_buy_date:
+	    if always_show_adjusted:
+		row['adjusted_buy_date'] = convert_from_date(
+                    lot.adjusted_buy_date) or convert_from_date(
+		    lot.buy_date)
+            elif lot.buy_date == lot.adjusted_buy_date:
                 row['adjusted_buy_date'] = ''
             else:
                 row['adjusted_buy_date'] = convert_from_date(
                     lot.adjusted_buy_date)
             row['basis'] = convert_from_int(lot.basis)
-            if lot.basis == lot.adjusted_basis:
+	    if always_show_adjusted:
+                row['adjusted_basis'] = convert_from_int(lot.adjusted_basis) or convert_from_int(lot.basis)
+            elif lot.basis == lot.adjusted_basis:
                 row['adjusted_basis'] = ''
             else:
                 row['adjusted_basis'] = convert_from_int(lot.adjusted_basis)
