@@ -47,6 +47,40 @@ class TestLots(unittest.TestCase):
         with self.assertRaises(lots_lib.BadHeadersError):
             lots = lots_lib.Lots.create_from_csv_data(csv_data)
 
+    def test_write_csv_data_always_show_adjusted(self):
+        lots_rows = []
+        lots_rows.append(lots_lib.Lot(
+            10, 'ABC', 'A', datetime.date(2014, 9, 15), datetime.date(
+                2014, 9, 14), 2000, 2100, datetime.date(2014, 10, 5), 1800,
+            'W', 200, 'form1', 'lot1', ['lot3', 'lot4'], True, True))
+        lots_rows.append(lots_lib.Lot(10, 'ABC', 'A', datetime.date(
+            2014, 9, 15), datetime.date(2014, 9, 15), 2000, 2000,
+            datetime.date(2014, 10, 5), 1800, 'W', 200, 'form2', 'lot2', [],
+            False, False))
+        lots_rows.append(lots_lib.Lot(20, 'ABC', 'A', datetime.date(
+            2014, 9, 25), datetime.date(2014, 9, 25), 3000, 3000,
+            datetime.date(2014, 11, 5), 1800, '', 0, '', '', [], False, False))
+        lots = lots_lib.Lots(lots_rows)
+
+        actual_output = StringIO.StringIO()
+        lots.write_csv_data(True, actual_output)
+
+        expected_csv_data = [
+            'Num Shares,Symbol,Description,Buy Date,Adjusted Buy Date,Basis,'
+            'Adjusted Basis,Sell Date,Proceeds,Adjustment Code,Adjustment,'
+            'Form Position,Buy Lot,Replacement For,Is Replacement,'
+            'Loss Processed',
+            '10,ABC,A,09/15/2014,09/14/2014,2000,2100,10/05/2014,1800,W,200,'
+            'form1,lot1,lot3|lot4,True,True',
+            '10,ABC,A,09/15/2014,09/15/2014,2000,2000,10/05/2014,1800,W,200,form2,lot2,,,',
+            '20,ABC,A,09/25/2014,09/25/2014,3000,3000,11/05/2014,1800,,,,_1,,,'
+        ]
+
+        actual_output.seek(0)
+        self.assertSequenceEqual(
+            [line.rstrip()
+             for line in actual_output.readlines()], expected_csv_data)
+
     def test_write_csv_data(self):
         lots_rows = []
         lots_rows.append(lots_lib.Lot(
@@ -63,7 +97,7 @@ class TestLots(unittest.TestCase):
         lots = lots_lib.Lots(lots_rows)
 
         actual_output = StringIO.StringIO()
-        lots.write_csv_data(actual_output)
+        lots.write_csv_data(False, actual_output)
 
         expected_csv_data = [
             'Num Shares,Symbol,Description,Buy Date,Adjusted Buy Date,Basis,'
@@ -94,7 +128,7 @@ class TestLots(unittest.TestCase):
         ]
         lots = lots_lib.Lots.create_from_csv_data(csv_data)
         actual_output = StringIO.StringIO()
-        lots.write_csv_data(actual_output)
+        lots.write_csv_data(False, actual_output)
         actual_output.seek(0)
         self.assertSequenceEqual(
             [line.rstrip() for line in actual_output.readlines()], csv_data)
